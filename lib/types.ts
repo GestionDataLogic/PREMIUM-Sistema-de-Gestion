@@ -168,3 +168,82 @@ export interface Period {
   fin: Date;
   tipo: PeriodType;
 }
+
+// ─── Libro Diario ────────────────────────────────────────────────────────────
+export interface JournalEntry {
+  idOp: string;
+  fecha: Date | null;
+  tipoOp: string;
+  tipoBase: string;
+  nombreParen: string | null;
+  numOp: string | null;
+  ctaOrigen: string;
+  ctaDestino: string;
+  monto: number;
+  intereses: number;
+  montoTotal: number;
+  detalle: string;
+  estado: string;
+}
+
+// ─── Stock ───────────────────────────────────────────────────────────────────
+export interface StockEntry {
+  idOp: string;
+  fecha: Date | null;
+  tipoOp: string;
+  tipoBase: string;
+  numOp: string | null;
+  idProd: string;
+  nombreProd: string;
+  tipoItem: "MER" | "INS" | "ACT" | "OTRO";
+  capa1: string;
+  unidades: number;
+  costoFijo: number;
+  costoUnit: number;
+}
+
+// ─── FIFO ────────────────────────────────────────────────────────────────────
+export interface FIFOProductResult {
+  valorStock: number;
+  cmvPorNum: Record<string, number>;
+  gananciaTenencia: number;
+}
+export type FIFOResult = Record<string, FIFOProductResult>;
+
+// ─── Configuración de usuario ────────────────────────────────────────────────
+export interface UserConfig {
+  nombre: string;
+  celular: string;
+  empresa: string;
+  usuario: string;
+  clave: string;
+  sheetId: string;
+  gidLd: string;
+  gidStock: string;
+  gidIds: string;
+}
+
+// ─── Datos de empresa (caché) ────────────────────────────────────────────────
+export interface CompanyData {
+  ld: JournalEntry[];
+  stk: StockEntry[];
+  deudas_cuotas: DebtInstallment[];
+  nombres_capa1: Record<string, string>;
+  inflacion_por_mes: Record<string, number>;
+  periodos: Period[];
+}
+
+// ─── Resultado de período ────────────────────────────────────────────────────
+export interface PeriodResult {
+  er: IncomeStatement;
+  sp: BalanceSheet;
+  fc: CashFlow;
+  cp: EquityChangeRow[];
+  deudas: DebtControl;
+  stock: StockItem[];
+  roe: number;
+  roic: number;
+  tieneEr: boolean;
+  fechaInicio: Date;
+  fechaFin: Date;
+}
