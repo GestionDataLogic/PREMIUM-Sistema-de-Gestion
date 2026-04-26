@@ -1,15 +1,3 @@
-/**
- * parsers.ts
- * ─────────────────────────────────────────────────────────────────────────────
- * Traducción directa de las funciones de parseo de Python:
- *   - parsear_libro_diario  →  parseJournal
- *   - parsear_stock         →  parseStock
- *   - parsear_lista_ids     →  parseIdList
- *
- * Input:  string[][] (tal como lo devuelve downloadSheet)
- * Output: tipos tipados de types.ts
- */
-
 import type {
   JournalEntry,
   StockEntry,
@@ -17,26 +5,16 @@ import type {
   AlertaTipo,
 } from "./types";
 
-// ─── Utilidades de limpieza ────────────────────────────────────────────────────
-
-/**
- * Limpia un string de moneda y lo convierte a número.
- * Maneja formatos: $1.234,56 / $1,234.56 / 1234 / "-"
- */
 export function cleanMoney(val: unknown): number {
   if (val === null || val === undefined) return 0;
   const s = String(val).trim();
   if (s === "" || s === "-" || s === "nan") return 0;
 
-  // Quitar $ y espacios
   let cleaned = s.replace(/[\$\s]/g, "");
 
-  // Detectar formato: si hay coma Y punto
   if (cleaned.includes(",") && cleaned.includes(".")) {
-    // Formato europeo: 1.234,56 → quitar punto, cambiar coma
     cleaned = cleaned.replace(/\./g, "").replace(",", ".");
   } else if (cleaned.includes(",") && !cleaned.includes(".")) {
-    // Solo coma: puede ser decimal europeo
     cleaned = cleaned.replace(",", ".");
   }
 
@@ -44,51 +22,33 @@ export function cleanMoney(val: unknown): number {
   return isNaN(num) ? 0 : num;
 }
 
-/**
- * Extrae el texto dentro del primer par de paréntesis.
- * "Venta a Crédito (Juan Pérez)" → "Juan Pérez"
- */
 export function extractParens(text: string | null | undefined): string | null {
   if (!text) return null;
   const match = text.match(/\(([^)]+)\)/);
   return match ? match[1].trim() : null;
 }
 
-/**
- * Elimina el contenido entre paréntesis del texto.
- * "Venta a Crédito (Juan Pérez)" → "Venta a Crédito"
- */
 export function removeParens(text: string | null | undefined): string {
   if (!text) return "";
   return text.replace(/\s*\([^)]*\)/g, "").trim();
 }
 
-/**
- * Extrae el número final del ID de operación.
- * "DIA-0042" → "0042"
- */
+
 function extractNumOp(id: string): string | null {
   const match = id.match(/-(\d+)$/);
   return match ? match[1] : null;
 }
 
-/**
- * Verifica si el valor de la columna "estado" indica ACTIVO.
- */
+
 function isActivo(val: string): boolean {
   return val.trim().toUpperCase() === "ACTIVO";
 }
 
-/**
- * Parsea una fecha desde string, retorna null si no es válida.
- */
 function parseDate(val: string): Date | null {
   if (!val || val.trim() === "" || val === "nan") return null;
   const d = new Date(val.trim());
   return isNaN(d.getTime()) ? null : d;
 }
-
-// ─── Alerta de cuota ──────────────────────────────────────────────────────────
 
 function calcAlertaCuota(
   vencimiento: Date | null,
@@ -124,13 +84,6 @@ function calcAlertaCuota(
   return { alertaTipo: null, alertaMsg: null };
 }
 
-// ─── parseJournal ─────────────────────────────────────────────────────────────
-
-/**
- * Traduce parsear_libro_diario de Python.
- * Busca la fila cabecera que contenga "ID de la Operaci",
- * luego filtra las filas que empiecen con "DIA-" y estén ACTIVO.
- */
 export function parseJournal(rows: string[][]): JournalEntry[] {
   let headerIdx = -1;
 
@@ -141,10 +94,8 @@ export function parseJournal(rows: string[][]): JournalEntry[] {
     }
   }
 
-  // Filas de datos (después del header)
   const dataRows = headerIdx >= 0 ? rows.slice(headerIdx + 1) : rows;
 
-  // Filtrar por filas que empiecen con DIA-
   const diaRows = dataRows.filter((row) =>
     row[0]?.trim().match(/^DIA-/)
   );
@@ -152,7 +103,6 @@ export function parseJournal(rows: string[][]): JournalEntry[] {
   const entries: JournalEntry[] = [];
 
   for (const row of diaRows) {
-    // Normalizar largo (mínimo 10 columnas)
     while (row.length < 10) row.push("");
 
     const [
@@ -191,20 +141,13 @@ export function parseJournal(rows: string[][]): JournalEntry[] {
   return entries;
 }
 
-// ─── parseStock ───────────────────────────────────────────────────────────────
-
-/**
- * Traduce parsear_stock de Python.
- * Devuelve [StockEntry[], DebtInstallment[]] ya que la misma hoja
- * puede contener también el registro de cuotas de deuda.
- */
 export function parseStock(
   rows: string[][]
 ): { stock: StockEntry[]; deudas: DebtInstallment[] } {
   let headerIdx = -1;
   let startDebt: number | null = null;
 
-  // Buscar fila de header (contiene "ID de la Operaci" Y "Costo Fijo")
+
   for (let i = 0; i < rows.length; i++) {
     const hasId = rows[i].some((v) => v.includes("ID de la Operaci"));
     const hasCosto = rows[i].some((v) => v.includes("Costo Fijo"));
@@ -226,7 +169,6 @@ export function parseStock(
 
   const dataRows = headerIdx >= 0 ? rows.slice(headerIdx + 1) : rows;
 
-  // ── Stock ──────────────────────────────────────────────────────────────────
   const stockEntries: StockEntry[] = [];
 
   for (const row of dataRows) {
@@ -265,11 +207,12 @@ export function parseStock(
       idOp: idOp.trim(),
       fecha: parseDate(fechaRaw),
       tipoOp: tipoMov.trim(),    
-      tipoBase: tipoMov.trim(),  
+      tipoBase: removeParens(tipoMov),
       detalle: detalle.trim(),
       idProd: idProdClean,
       nombreProd: nombreProd.trim(),
       unidades: parseFloat(unidadesRaw) || 0,
+      costoFijo: 0,  // <-- AÑADIR ESTA LÍNEA
       costoUnit: cleanMoney(costoUnitRaw),
       tipoItem,
       capa1,
@@ -277,7 +220,6 @@ export function parseStock(
     });
   }
 
-  // ── Deudas / Cuotas (columnas a la derecha) ────────────────────────────────
   const deudas: DebtInstallment[] = [];
 
   if (startDebt !== null) {
