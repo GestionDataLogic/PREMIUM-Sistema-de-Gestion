@@ -1,10 +1,7 @@
-/** @type {import('next').NextConfig} */
-const nextConfig = {
+export default {
   experimental: {
-    // Permite imports de módulos que usan Node.js nativo en API routes
     serverComponentsExternalPackages: ["googleapis", "google-auth-library"],
   },
-  // Headers de seguridad para la app financiera
   async headers() {
     return [
       {
@@ -18,5 +15,3 @@ const nextConfig = {
     ];
   },
 };
-
-export default nextConfig;
