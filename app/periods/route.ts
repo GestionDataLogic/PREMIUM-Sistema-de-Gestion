@@ -3,12 +3,7 @@ import type { Period } from "@/lib/types";
 
 export async function GET(_request: NextRequest) {
   try {
-    // ── REAL IMPLEMENTATION ──────────────────────────────────────────────────
-    // import { getAvailablePeriods } from "@/lib/calculations";
-    // const periods = await getAvailablePeriods(process.env.MASTER_SHEET_ID!, process.env.MASTER_GID!);
-    // return NextResponse.json(periods);
-    // ────────────────────────────────────────────────────────────────────────
-
+  
     return NextResponse.json(
       { error: "DATA_NOT_CONNECTED" },
       { status: 503 }
