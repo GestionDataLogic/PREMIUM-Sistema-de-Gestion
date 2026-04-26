@@ -19,7 +19,7 @@ import type {
   DebtControl,
   StockItem,
 } from "./types";
-import { calcularTodo } from "./calculations";
+import { calcularTodo } from "./calculation";
 import {
   calculateAccumulatedInflation,
   fisherReal,
