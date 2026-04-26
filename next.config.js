@@ -1,9 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  experimental: {
-    // Permite imports de módulos que usan Node.js nativo en API routes
-    serverComponentsExternalPackages: ["googleapis", "google-auth-library"],
-  },
+  serverExternalPackages: ["googleapis", "google-auth-library"],
   async headers() {
     return [
       {
