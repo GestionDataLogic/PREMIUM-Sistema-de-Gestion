@@ -1,6 +1,5 @@
-import type { NextConfig } from "next";
-
-const nextConfig: NextConfig = {
+/** @type {import('next').NextConfig} */
+const nextConfig = {
   experimental: {
     // Permite imports de módulos que usan Node.js nativo en API routes
     serverComponentsExternalPackages: ["googleapis", "google-auth-library"],
@@ -20,4 +19,4 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+module.exports = nextConfig;
