@@ -1,10 +1,16 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
+import { DM_Sans } from "next/font/google";
 import "./globals.css";
 
+const dmSans = DM_Sans({ subsets: ["latin"] });
+
 export const metadata: Metadata = {
-  title: "DataLogic · Panel Financiero",
-  description: "Sistema de análisis financiero empresarial",
-  themeColor: "#0a0b0d",
+  title: "DataLogic PREMIUM - Sistema de Gestión",
+  description: "Sistema integral de gestión empresarial",
+};
+
+export const viewport: Viewport = {
+  themeColor: "#4f8ef7",
 };
 
 export default function RootLayout({
@@ -14,7 +20,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="es" className="dark">
-      <body>{children}</body>
+      <body className={dmSans.className}>{children}</body>
     </html>
   );
 }
