@@ -186,13 +186,14 @@ export interface JournalEntry {
   estado: string;
 }
 
-// ─── Stock ───────────────────────────────────────────────────────────────────
+// ─── Stock ─────────────────────────────────────────────────────────────────── 
 export interface StockEntry {
   idOp: string;
   fecha: Date | null;
   tipoOp: string;
   tipoBase: string;
   numOp: string | null;
+  detalle: string;          
   idProd: string;
   nombreProd: string;
   tipoItem: "MER" | "INS" | "ACT" | "OTRO";
