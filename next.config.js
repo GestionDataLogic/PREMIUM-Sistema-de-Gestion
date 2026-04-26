@@ -4,7 +4,6 @@ const nextConfig = {
     // Permite imports de módulos que usan Node.js nativo en API routes
     serverComponentsExternalPackages: ["googleapis", "google-auth-library"],
   },
-  // Headers de seguridad para la app financiera
   async headers() {
     return [
       {
