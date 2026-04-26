@@ -264,7 +264,8 @@ export function parseStock(
     stockEntries.push({
       idOp: idOp.trim(),
       fecha: parseDate(fechaRaw),
-      tipoMov: tipoMov.trim(),
+      tipoOp: tipoMov.trim(),    
+      tipoBase: tipoMov.trim(),  
       detalle: detalle.trim(),
       idProd: idProdClean,
       nombreProd: nombreProd.trim(),
