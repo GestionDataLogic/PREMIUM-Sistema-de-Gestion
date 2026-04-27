@@ -1,12 +1,3 @@
-/**
- * data-loader.ts
- * ─────────────────────────────────────────────────────────────────────────────
- * Orquesta la carga, parseo y caché de los datos de una empresa.
- *
- * Equivale a cargar_datos_empresa() de Python, pero separado para poder
- * reutilizarlo desde múltiples API routes.
- */
-
 import { downloadSheet } from "./google-sheets";
 import {
   parseJournal,
