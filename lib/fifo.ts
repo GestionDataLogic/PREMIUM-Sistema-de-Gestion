@@ -1,13 +1,3 @@
-/**
- * fifo.ts
- * ─────────────────────────────────────────────────────────────────────────────
- * Traducción de calcular_fifo_valor_corriente de Python.
- *
- * Implementa valorización FIFO con revalorizaciones intercaladas.
- * Las revalorizaciones incrementan el costo promedio de las unidades
- * que permanecen en stock al momento del ajuste.
- */
-
 import type { StockEntry, JournalEntry, FIFOResult } from "./types";
 
 interface RevalEvent {
@@ -18,10 +8,6 @@ interface RevalEvent {
 
 type FIFOLayer = { units: number; cost: number };
 
-/**
- * Compara dos fechas para ordenamiento.
- * Null se considera menor que cualquier fecha real.
- */
 function compareDates(a: Date | null, b: Date | null): number {
   if (!a && !b) return 0;
   if (!a) return -1;
@@ -29,10 +15,6 @@ function compareDates(a: Date | null, b: Date | null): number {
   return a.getTime() - b.getTime();
 }
 
-/**
- * Compara dos identificadores de operación numéricamente.
- * "0042" <= "0043"
- */
 function compareNumOp(a: string | null, b: string | null): number {
   if (!a && !b) return 0;
   if (!a) return -1;
@@ -40,24 +22,15 @@ function compareNumOp(a: string | null, b: string | null): number {
   return parseInt(a, 10) - parseInt(b, 10);
 }
 
-/**
- * calcularFIFOValorCorriente
- *
- * @param stock  Todos los movimientos de stock (STK-*)
- * @param ld     Libro diario (para extraer las revalorizaciones)
- * @returns      FIFOResult: por cada idProd → { valorStock, cmvPorNum, gananciaTenencia }
- */
 export function calcularFIFOValorCorriente(
   stock: StockEntry[],
   ld: JournalEntry[]
 ): FIFOResult {
-  // ── 1. Indexar revalorizaciones por idProd ─────────────────────────────────
   const revalPorId = new Map<string, RevalEvent[]>();
 
   for (const entry of ld) {
     if (!entry.tipoBase.includes("Revalorizaci")) continue;
 
-    // El detalle tiene "Ajuste Stock: MER-001-004" o similar
     const match = entry.detalle.match(
       /Ajuste Stock:\s*((?:ACT|MER|INS)-\S+)/i
     );
@@ -73,7 +46,6 @@ export function calcularFIFOValorCorriente(
     });
   }
 
-  // Ordenar revalorizaciones por (fecha, numOp)
   for (const [, events] of revalPorId) {
     events.sort((a, b) => {
       const df = compareDates(a.fecha, b.fecha);
@@ -82,18 +54,15 @@ export function calcularFIFOValorCorriente(
     });
   }
 
-  // ── 2. Agrupar movimientos por idProd ──────────────────────────────────────
   const stockPorProd = new Map<string, StockEntry[]>();
   for (const row of stock) {
     if (!stockPorProd.has(row.idProd)) stockPorProd.set(row.idProd, []);
     stockPorProd.get(row.idProd)!.push(row);
   }
 
-  // ── 3. Procesar FIFO por producto ──────────────────────────────────────────
   const resultado: FIFOResult = {};
 
   for (const [idProd, movimientos] of stockPorProd) {
-    // Ordenar movimientos por (fecha, numOp)
     const sorted = [...movimientos].sort((a, b) => {
       const df = compareDates(a.fecha, b.fecha);
       if (df !== 0) return df;
@@ -103,19 +72,15 @@ export function calcularFIFOValorCorriente(
     const revals = revalPorId.get(idProd) ?? [];
     let revalIdx = 0;
 
-    const cola: FIFOLayer[] = [];   // [{ units, cost }, …]  (FIFO queue)
+    const cola: FIFOLayer[] = [];   
     const cmvPorNum: Record<string, number> = {};
     let gananciaTenencia = 0;
 
-    /**
-     * Aplica las revalorizaciones pendientes hasta (fecha, numOp) inclusive.
-     * Modifica la cola in-place y acumula gananciaTenencia.
-     */
+
     function aplicarRevals(hastaFecha: Date, hastaNumOp: string | null = null) {
       while (revalIdx < revals.length) {
         const rv = revals[revalIdx];
 
-        // ¿Esta reval ya ocurrió antes del punto de corte?
         const rvAntes =
           compareDates(rv.fecha, hastaFecha) < 0 ||
           (compareDates(rv.fecha, hastaFecha) === 0 &&
@@ -141,15 +106,12 @@ export function calcularFIFOValorCorriente(
       }
     }
 
-    // ── Procesar movimiento por movimiento ─────────────────────────────────
     for (const mov of sorted) {
       aplicarRevals(mov.fecha!, mov.numOp);
 
       if (mov.unidades > 0) {
-        // Entrada: agregar capa FIFO
         cola.push({ units: mov.unidades, cost: mov.costoUnit });
       } else {
-        // Salida: consumir capas FIFO (egreso de stock)
         let cant = Math.abs(mov.unidades);
         let costoSalida = 0;
 
@@ -171,7 +133,6 @@ export function calcularFIFOValorCorriente(
       }
     }
 
-    // Aplicar revalorizaciones restantes (posteriores al último movimiento)
     if (revals.length > 0) {
       const lastReval = revals[revals.length - 1];
       aplicarRevals(lastReval.fecha, null);
