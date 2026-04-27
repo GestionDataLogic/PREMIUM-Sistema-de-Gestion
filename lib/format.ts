@@ -1,6 +1,3 @@
-// lib/format.ts
-
-/** Format as Argentine peso */
 export function formatARS(value: number, compact = false): string {
   if (compact) {
     if (Math.abs(value) >= 1_000_000) {
@@ -18,31 +15,26 @@ export function formatARS(value: number, compact = false): string {
   });
 }
 
-/** Format as percentage with sign */
 export function formatPct(value: number, decimals = 1): string {
   return `${value >= 0 ? "+" : ""}${value.toFixed(decimals)}%`;
 }
 
-/** Format as simple percentage (no sign) */
 export function formatPctPlain(value: number, decimals = 1): string {
   return `${value.toFixed(decimals)}%`;
 }
 
-/** Delta badge color class */
 export function deltaClass(value: number): string {
   if (value > 0) return "badge-green";
   if (value < 0) return "badge-red";
   return "badge-yellow";
 }
 
-/** Text color for positive/negative number */
 export function numClass(value: number): string {
   if (value > 0) return "num-positive";
   if (value < 0) return "num-negative";
   return "num-neutral";
 }
 
-/** Format date as "DD/MM/YYYY" */
 export function formatDate(date: Date | null): string {
   if (!date) return "—";
   return date.toLocaleDateString("es-AR", {
@@ -52,7 +44,6 @@ export function formatDate(date: Date | null): string {
   });
 }
 
-/** Format period label nicely */
 export function formatPeriodLabel(label: string): string {
   const monthNames = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
   if (/^\d{4}$/.test(label)) return `Año ${label}`;
@@ -67,13 +58,11 @@ export function formatPeriodLabel(label: string): string {
   return label;
 }
 
-/** Calculate % change between two values */
 export function pctChange(current: number, previous: number): number {
   if (previous === 0) return 0;
   return ((current - previous) / Math.abs(previous)) * 100;
 }
 
-/** Alert badge class */
 export function alertBadgeClass(tipo: string | null): string {
   switch (tipo) {
     case "vencida": return "badge-red";
@@ -83,7 +72,6 @@ export function alertBadgeClass(tipo: string | null): string {
   }
 }
 
-/** Alert badge label */
 export function alertBadgeLabel(tipo: string | null, msg: string | null): string {
   if (msg) return msg;
   switch (tipo) {
@@ -94,7 +82,6 @@ export function alertBadgeLabel(tipo: string | null, msg: string | null): string
   }
 }
 
-/** Semaforo diagnosis color */
 export function semaforoColor(roe: number, roic: number): string {
   const rv = roe >= 20; const ra = roe >= 12;
   const cv = roic >= 15; const ca = roic >= 8;
