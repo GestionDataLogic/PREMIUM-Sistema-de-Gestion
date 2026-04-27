@@ -22,7 +22,6 @@ import {
 } from "./inflation";
 import { extractParens, removeParens } from "./parsers";
 
-// ─── Helpers de clasificación ─────────────────────────────────────────────────
 
 function isVentaMer(tipoOp: string): boolean {
   const t = tipoOp.toLowerCase();
@@ -60,7 +59,6 @@ function isGastos(tipoBase: string): boolean {
   return /gastos/i.test(tipoBase);
 }
 
-// ─── Agrupar gastos por tipo ──────────────────────────────────────────────────
 
 function agruparGastos(ld: JournalEntry[]): Record<string, number> {
   const result: Record<string, number> = {};
@@ -72,7 +70,6 @@ function agruparGastos(ld: JournalEntry[]): Record<string, number> {
   return result;
 }
 
-// ─── calcularDeudas ───────────────────────────────────────────────────────────
 
 export function calcularDeudas(
   ld: JournalEntry[],
@@ -194,12 +191,6 @@ export function calcularDeudas(
   };
 }
 
-// ─── calcularTodo ─────────────────────────────────────────────────────────────
-
-/**
- * Traducción directa de calcular_todo() de Python.
- * Recibe el libro diario, el stock, y configuración de inflación.
- */
 export function calcularTodo(
   ld: JournalEntry[],
   stk: StockEntry[],
@@ -207,10 +198,8 @@ export function calcularTodo(
   deudasCuotas: DebtInstallment[] = [],
   inflacionPorMes: Record<string, number> = {}
 ): CalculationResult {
-  // ── 1. FIFO ────────────────────────────────────────────────────────────────
   const fifoResultado = calcularFIFOValorCorriente(stk, ld);
 
-  // ── 2. Stock actual ────────────────────────────────────────────────────────
   const stockActualMap = new Map<string, StockItem>();
 
   for (const [idProd, info] of Object.entries(fifoResultado)) {
@@ -231,7 +220,6 @@ export function calcularTodo(
   }
   const stockActual = [...stockActualMap.values()];
 
-  // ── 3. Clasificación de entradas del libro ─────────────────────────────────
   const ldVentaMer    = ld.filter((e) => isVentaMer(e.tipoOp));
   const ldVentaExtra  = ld.filter((e) => isVentaExtra(e.tipoOp));
   const ldSenasMer    = ld.filter((e) => isSenaMer(e.tipoOp));
@@ -244,7 +232,6 @@ export function calcularTodo(
     sumBy(ldVentaExtra, "monto") + sumBy(ldSenasExtra, "montoTotal");
   const ingresoVentasTotal = ingresoVentasMer + ingresoVentasExtra;
 
-  // ── 4. CMV FIFO ────────────────────────────────────────────────────────────
   const numsVentaMer = new Set(ldVentaMer.map((e) => e.numOp));
 
   const stkVendido = stk.filter(
@@ -262,11 +249,9 @@ export function calcularTodo(
 
   const cmv = cmvFifo + cmvAjusteMat;
 
-  // ── 5. Gastos ──────────────────────────────────────────────────────────────
   const gastosDetalle = agruparGastos(ld);
   const gastosOp = Object.values(gastosDetalle).reduce((s, v) => s + v, 0);
 
-  // ── 6. Intereses financieros ───────────────────────────────────────────────
   const intCompraCrXProv: Record<string, number> = {};
   for (const e of ld.filter((e) => /compra a cr/i.test(e.tipoBase))) {
     if (e.nombreParen) {
@@ -351,7 +336,6 @@ export function calcularTodo(
 
   const ingresoFinanciero = interesesCobrarAccum + intExtraTotalCobrar;
 
-  // ── 7. Otros ───────────────────────────────────────────────────────────────
   const perdidaRotura = ld
     .filter((e) => /rotura|perdida|pérdida/i.test(e.tipoBase))
     .reduce((s, e) => s + e.montoTotal, 0);
@@ -369,7 +353,6 @@ export function calcularTodo(
     0
   );
 
-  // Costo FIFO de activos fijos vendidos (dentro de ventas extra)
   const numsVentaExtra = new Set(ldVentaExtra.map((e) => e.numOp));
   const stkActivosVendidos = stk.filter(
     (s) => numsVentaExtra.has(s.numOp) && s.tipoItem === "ACT" && s.unidades < 0
@@ -409,7 +392,6 @@ export function calcularTodo(
     resultadoNeto,
   };
 
-  // ── 8. Balance / SP ────────────────────────────────────────────────────────
   const cajaMap: Record<string, number> = {};
   let materialesSaldo = 0;
   let proveedoresPagar = 0;
@@ -512,7 +494,6 @@ export function calcularTodo(
     }
   }
 
-  // Filtrar cuentas que no son caja real
   const cuentasNoCaja = new Set([
     "gastos operativos",
     "materiales sin id",
@@ -576,7 +557,6 @@ export function calcularTodo(
     Math.max(0, proveedoresPagar) + Math.max(0, interesesPagar);
   const patrimonioNeto = capitalSocial + excedenteRetiros + resultadoNeto;
 
-  // ROE / ROIC
   const gastosExtraordinarios = gastosDetalle["Gastos Extraordinarios"] ?? 0;
   const resultadoOperativo =
     ingresoVentasMer -
@@ -589,7 +569,6 @@ export function calcularTodo(
   const roic =
     patrimonioNeto > 0 ? (resultadoOperativo / patrimonioNeto) * 100 : 0;
 
-  // Inflación acumulada
   const fechaPrimeraOp = ld
     .filter((e) => e.fecha !== null)
     .map((e) => e.fecha!)
@@ -614,7 +593,6 @@ export function calcularTodo(
       ? fisherReal(roic / 100, inflacionAcum) * 100
       : null;
 
-  // Desglose socios
   const aporteXSocio: Record<string, number> = {};
   const retiroXSocio: Record<string, number> = {};
   for (const e of ld.filter((e) => /porte/i.test(e.tipoBase))) {
@@ -664,7 +642,6 @@ export function calcularTodo(
     aportesPorSocio,
   };
 
-  // ── 9. Flujo de Caja ───────────────────────────────────────────────────────
   const ventasC = ld
     .filter((e) => /venta al contado/i.test(e.tipoOp))
     .reduce((s, e) => s + e.monto, 0);
@@ -738,7 +715,6 @@ export function calcularTodo(
     comprasC: comprasMerC + comprasActC,
   };
 
-  // ── 10. Cambio de Patrimonio ───────────────────────────────────────────────
   const cpRows: EquityChangeRow[] = [];
   for (const e of ld.filter((entry) => /porte/i.test(entry.tipoBase))) {
     cpRows.push({
@@ -778,13 +754,10 @@ export function calcularTodo(
     return a.fecha.getTime() - b.fecha.getTime();
   });
 
-  // ── 11. Deudas ─────────────────────────────────────────────────────────────
   const deudas = calcularDeudas(ld, deudasCuotas, intCompraCrXProv, intVentaCrXCli);
 
-  // ── 12. Ventas por categoría y temporalidad ────────────────────────────────
   const ventaXNumMer = Object.fromEntries(ldVentaMer.map((e) => [e.numOp, e.monto]));
 
-  // Señas agrupadas por capa1
   const senasXCapa1: Record<string, number> = {};
   for (const e of ldSenasMer) {
     const idProd = extractParens(e.tipoOp)?.trim().toUpperCase() ?? "";
@@ -795,7 +768,6 @@ export function calcularTodo(
   const ventaXCapa1: VentaXCapa1 = {};
   const udsXLabel: Record<string, number> = {};
 
-  // Agrupar por capa1
   const stkVendidoByCapa1 = groupBy(stkVendido, (s) => s.capa1);
 
   for (const [c1, grupo] of Object.entries(stkVendidoByCapa1)) {
@@ -822,7 +794,6 @@ export function calcularTodo(
     ventaXCapa1[label] = { venta, costo, ganancia };
   }
 
-  // Ajuste por materiales sin ID
   if (cmvAjusteMat > 0 && Object.keys(ventaXCapa1).length > 0) {
     const totalUdsVendidas = Object.values(udsXLabel).reduce((s, v) => s + v, 0);
     if (totalUdsVendidas > 0) {
@@ -835,7 +806,6 @@ export function calcularTodo(
     }
   }
 
-  // Ventas temporales
   const ventasMerAnuales = ventasTemporales(ldVentaMer, "anual");
   const ventasMerMensuales = ventasTemporales(ldVentaMer, "mensual");
   const ventasExtraAnuales = ventasTemporales(ldVentaExtra, "anual");
@@ -866,7 +836,6 @@ export function calcularTodo(
   };
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function sumBy(arr: JournalEntry[], key: keyof JournalEntry): number {
   return arr.reduce((s, e) => s + ((e[key] as number) ?? 0), 0);
