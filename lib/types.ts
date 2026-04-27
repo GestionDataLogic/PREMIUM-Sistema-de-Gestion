@@ -1,5 +1,3 @@
-// lib/types.ts
-
 export type AlertaTipo = "vencida" | "3dias" | "7dias" | null;
 
 export interface DebtInstallment {
@@ -169,7 +167,6 @@ export interface Period {
   tipo: PeriodType;
 }
 
-// ─── Libro Diario ────────────────────────────────────────────────────────────
 export interface JournalEntry {
   idOp: string;
   fecha: Date | null;
@@ -186,7 +183,6 @@ export interface JournalEntry {
   estado: string;
 }
 
-// ─── Stock ─────────────────────────────────────────────────────────────────── 
 export interface StockEntry {
   idOp: string;
   fecha: Date | null;
@@ -203,7 +199,6 @@ export interface StockEntry {
   costoUnit: number;
 }
 
-// ─── FIFO ────────────────────────────────────────────────────────────────────
 export interface FIFOProductResult {
   valorStock: number;
   cmvPorNum: Record<string, number>;
@@ -211,7 +206,6 @@ export interface FIFOProductResult {
 }
 export type FIFOResult = Record<string, FIFOProductResult>;
 
-// ─── Configuración de usuario ────────────────────────────────────────────────
 export interface UserConfig {
   nombre: string;
   celular: string;
@@ -224,7 +218,6 @@ export interface UserConfig {
   gidIds: string;
 }
 
-// ─── Datos de empresa (caché) ────────────────────────────────────────────────
 export interface CompanyData {
   ld: JournalEntry[];
   stk: StockEntry[];
@@ -234,7 +227,6 @@ export interface CompanyData {
   periodos: Period[];
 }
 
-// ─── Resultado de período ────────────────────────────────────────────────────
 export interface PeriodResult {
   er: IncomeStatement;
   sp: BalanceSheet;
