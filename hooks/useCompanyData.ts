@@ -1,9 +1,4 @@
 "use client";
-/**
- * hooks/useCompanyData.ts
- * Fetches real CalculationResult from /api/data.
- * Handles loading, errors, period switching and refetch.
- */
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import type { CalculationResult, Period } from "@/lib/types";
@@ -17,7 +12,7 @@ export interface CompanyDataState {
   error:    string | null;
 }
 
-// Revive ISO date strings back to Date objects after JSON.parse
+
 const ISO_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/;
 
 function reviveDates(obj: unknown): unknown {
@@ -55,8 +50,8 @@ export function useCompanyData(periodoLabel?: string) {
 
     try {
       const url = periodo
-        ? `/api/data?periodo=${encodeURIComponent(periodo)}`
-        : "/api/data";
+        ? `/api/dashboard?periodo=${encodeURIComponent(periodo)}`
+        : "/api/dashboard";
 
       const res = await fetch(url, {
         signal: controller.signal,
