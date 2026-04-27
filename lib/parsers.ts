@@ -153,7 +153,6 @@ export function parseStock(
     const hasCosto = rows[i].some((v) => v.includes("Costo Fijo"));
     if (hasId && hasCosto) {
       headerIdx = i;
-      // Buscar columna de inicio de deudas en esa misma fila
       for (let j = 0; j < rows[i].length; j++) {
         if (
           rows[i][j].includes("ID Operacion de Registro") ||
@@ -280,12 +279,7 @@ export function parseStock(
   return { stock: stockEntries, deudas };
 }
 
-// ─── parseIdList ──────────────────────────────────────────────────────────────
 
-/**
- * Traduce parsear_lista_ids de Python.
- * Lee la hoja de IDs y retorna un mapa { "MER-001": "Nombre Producto", … }
- */
 export function parseIdList(rows: string[][]): Record<string, string> {
   const nombresCapa1: Record<string, string> = {};
 
@@ -302,7 +296,6 @@ export function parseIdList(rows: string[][]): Record<string, string> {
   const headers = rows[headerRow].map((v) => v.trim());
   const dataRows = rows.slice(headerRow + 1);
 
-  // Puede haber múltiples grupos (MER | INS | ACT) en la misma fila de headers
   const idxTipo: number[] = [];
   const idxId: number[] = [];
   const idxNombre: number[] = [];
@@ -317,7 +310,6 @@ export function parseIdList(rows: string[][]): Record<string, string> {
     const idCol = idxId[gi];
     const nomCol = idxNombre[gi];
 
-    // Tipo: la columna de Tipo más cercana a la izquierda de idCol
     const tipoCol = idxTipo
       .filter((t) => t <= idCol)
       .reduce((prev, curr) => (curr > prev ? curr : prev), -1);
@@ -357,13 +349,6 @@ export function parseIdList(rows: string[][]): Record<string, string> {
   return nombresCapa1;
 }
 
-// ─── readInflation ────────────────────────────────────────────────────────────
-
-/**
- * Traduce leer_inflacion_desde_excel de Python.
- * Devuelve un mapa { "2024-01": 0.042, "2024-02": 0.038, … }
- * La tasa está en formato decimal (0.042 = 4.2%).
- */
 export function readInflation(rows: string[][]): Record<string, number> {
   const inflacion: Record<string, number> = {};
 
@@ -377,7 +362,6 @@ export function readInflation(rows: string[][]): Record<string, number> {
     }
   }
 
-  // Fallback: buscar fila con formato YYYY-MM
   if (headerRow < 0) {
     outer: for (let i = 0; i < rows.length; i++) {
       for (const v of rows[i]) {
@@ -404,14 +388,12 @@ export function readInflation(rows: string[][]): Record<string, number> {
     if (!mesStr || mesStr === "nan" || !inflStr || inflStr === "nan") continue;
     if (!/^\d{4}-\d{1,2}$/.test(mesStr)) continue;
 
-    // Normalizar a YYYY-MM
     const [y, m] = mesStr.split("-");
     const key = `${y}-${m.padStart(2, "0")}`;
 
     let tasa = parseFloat(inflStr.replace("%", "").replace(",", ".").trim());
     if (isNaN(tasa)) continue;
 
-    // Si viene como 4.2 en vez de 0.042
     if (tasa > 1) tasa /= 100;
 
     inflacion[key] = tasa;
