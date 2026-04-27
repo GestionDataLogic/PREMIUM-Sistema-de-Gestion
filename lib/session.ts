@@ -2,12 +2,12 @@ import { getIronSession, type IronSession, type SessionOptions } from "iron-sess
 import { cookies } from "next/headers";
 import type { UserConfig } from "./types";
 
+export type UserSession = Pick<UserConfig, "nombre" | "celular" | "empresa" | "usuario" | "sheetId" | "gidLd" | "gidStock" | "gidIds">;
 
 export interface SessionData {
   isLoggedIn: boolean;
-  user?: Pick<UserConfig, "nombre" | "celular" | "empresa" | "usuario" | "sheetId" | "gidLd" | "gidStock" | "gidIds">;
+  user?: UserSession;
 }
-
 
 export function getSessionOptions(): SessionOptions {
   const secret = process.env.SESSION_SECRET;
@@ -23,7 +23,7 @@ export function getSessionOptions(): SessionOptions {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
-      maxAge: 60 * 60 * 24 * 7, 
+      maxAge: 60 * 60 * 24 * 7,
     },
   };
 }
@@ -33,12 +33,12 @@ export async function getSession(): Promise<IronSession<SessionData>> {
   return getIronSession<SessionData>(cookieStore, getSessionOptions());
 }
 
-export async function requireAuth(): Promise<Pick<UserConfig, "nombre" | "celular" | "empresa" | "usuario" | "sheetId" | "gidLd" | "gidStock" | "gidIds">> {
+export async function requireAuth(): Promise<UserSession> {
   const session = await getSession();
   if (!session.isLoggedIn || !session.user) {
     throw new AuthError("No autorizado. Por favor, iniciá sesión.");
   }
-  return session.user; 
+  return session.user;
 }
 
 export class AuthError extends Error {
