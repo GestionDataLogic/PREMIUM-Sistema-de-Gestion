@@ -8,6 +8,8 @@ import {
 import { generarPeriodos } from "./periods";
 import type { CompanyData, UserConfig } from "./types";
 
+export type UserSession = Pick<UserConfig, "nombre" | "celular" | "empresa" | "usuario" | "sheetId" | "gidLd" | "gidStock" | "gidIds">;
+
 interface CompanyCacheEntry {
   data: CompanyData;
   expiresAt: number;
@@ -15,7 +17,7 @@ interface CompanyCacheEntry {
 
 const companyCache = new Map<string, CompanyCacheEntry>();
 
-function companyKey(user: UserConfig): string {
+function companyKey(user: UserSession | UserConfig): string {
   return `${user.sheetId}::${user.gidLd}::${user.gidStock}::${user.gidIds}`;
 }
 
@@ -27,7 +29,7 @@ export function clearCompanyCache(user?: UserConfig): void {
   }
 }
 
-export async function loadCompanyData(user: UserConfig): Promise<CompanyData> {
+export async function loadCompanyData(user: UserSession): Promise<CompanyData> {
   const key = companyKey(user);
   const ttl = parseInt(process.env.SHEETS_CACHE_TTL ?? "300", 10) * 1_000;
 
