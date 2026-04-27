@@ -8,10 +8,6 @@ import {
 import { generarPeriodos } from "./periods";
 import type { CompanyData, UserConfig } from "./types";
 
-// ─── Caché en memoria ──────────────────────────────────────────────────────────
-// En Vercel (serverless), cada invocación tiene su propio proceso.
-// El caché funciona dentro de una misma cold-start (warm requests).
-
 interface CompanyCacheEntry {
   data: CompanyData;
   expiresAt: number;
@@ -31,30 +27,21 @@ export function clearCompanyCache(user?: UserConfig): void {
   }
 }
 
-// ─── loadCompanyData ──────────────────────────────────────────────────────────
-
-/**
- * Carga y parsea todos los datos de una empresa.
- * Usa caché con TTL de SHEETS_CACHE_TTL segundos.
- */
 export async function loadCompanyData(user: UserConfig): Promise<CompanyData> {
   const key = companyKey(user);
   const ttl = parseInt(process.env.SHEETS_CACHE_TTL ?? "300", 10) * 1_000;
 
-  // Verificar caché
   const cached = companyCache.get(key);
   if (cached && Date.now() < cached.expiresAt) {
     return cached.data;
   }
 
-  // Descargar las tres hojas en paralelo
   const [rawLd, rawStk, rawIds] = await Promise.all([
     downloadSheet(user.sheetId, user.gidLd),
     downloadSheet(user.sheetId, user.gidStock),
     downloadSheet(user.sheetId, user.gidIds),
   ]);
 
-  // Parsear
   const ld = parseJournal(rawLd);
   const { stock: stk, deudas: deudasCuotas } = parseStock(rawStk);
   const nombresCapa1 = parseIdList(rawIds);
