@@ -1,11 +1,3 @@
-/**
- * periods.ts
- * ─────────────────────────────────────────────────────────────────────────────
- * Traduce generar_periodos y calcular_periodo de Python.
- *
- * También exporta calcularROEROICacumulado (usado en gráficos de evolución).
- */
-
 import type {
   JournalEntry,
   StockEntry,
@@ -25,7 +17,6 @@ import {
   fisherReal,
 } from "./inflation";
 
-// ─── Helpers de fecha ─────────────────────────────────────────────────────────
 
 function daysInMonth(year: number, month: number): number {
   return new Date(year, month, 0).getDate();
@@ -47,12 +38,7 @@ function maxDate(dates: Date[]): Date | null {
   return new Date(Math.max(...valid.map((d) => d.getTime())));
 }
 
-// ─── generarPeriodos ──────────────────────────────────────────────────────────
 
-/**
- * Traduce generar_periodos de Python.
- * Genera períodos anuales, trimestrales y mensuales basados en las fechas del LD.
- */
 export function generarPeriodos(ld: JournalEntry[]): Period[] {
   const fechasValidas = ld
     .map((e) => e.fecha)
@@ -64,7 +50,6 @@ export function generarPeriodos(ld: JournalEntry[]): Period[] {
   const periodos: Period[] = [];
 
   for (const anio of anios) {
-    // Anual
     periodos.push({
       label: String(anio),
       inicio: new Date(anio, 0, 1),
@@ -72,7 +57,6 @@ export function generarPeriodos(ld: JournalEntry[]): Period[] {
       tipo: "anual",
     });
 
-    // Trimestral
     for (let q = 1; q <= 4; q++) {
       const mesIni = (q - 1) * 3;
       const mesFin = q * 3 - 1;
@@ -93,7 +77,6 @@ export function generarPeriodos(ld: JournalEntry[]): Period[] {
       }
     }
 
-    // Mensual
     const mesMax = Math.max(
       ...fechasValidas
         .filter((f) => f.getFullYear() === anio)
@@ -114,7 +97,6 @@ export function generarPeriodos(ld: JournalEntry[]): Period[] {
   return periodos;
 }
 
-// ─── Resultado vacío de ER ────────────────────────────────────────────────────
 
 function emptyER(): IncomeStatement {
   return {
@@ -145,16 +127,6 @@ function emptyFC(): CashFlow {
   };
 }
 
-// ─── calcularPeriodo ──────────────────────────────────────────────────────────
-
-/**
- * Traduce calcular_periodo de Python.
- *
- * - El Balance Sheet (SP) se acumula hasta fecha_fin (todo el historial).
- * - El Estado de Resultados (ER) y Flujo de Caja (FC) son solo del período
- *   [fecha_inicio_er, fecha_fin].
- * - Los resultados de períodos anteriores se calculan por diferencia.
- */
 export function calcularPeriodo(
   ldTodo: JournalEntry[],
   stkTodo: StockEntry[],
@@ -174,7 +146,6 @@ export function calcularPeriodo(
 
   if (ldEsp.length === 0) return null;
 
-  // Calcular el Balance completo (acumulado)
   const resEsp = calcularTodo(
     ldEsp,
     stkEsp,
@@ -184,7 +155,6 @@ export function calcularPeriodo(
   );
   const spEsp: BalanceSheet = { ...resEsp.sp };
 
-  // Datos solo del período (ER, FC, CP)
   const ldEr = ldEsp.filter((e) => e.fecha !== null && e.fecha >= fechaInicioEr);
   const tieneEr = ldEr.length > 0;
 
@@ -209,7 +179,6 @@ export function calcularPeriodo(
     cp = resEr.cp;
   }
 
-  // Resultado de períodos anteriores
   let resultadoPeriodosAnteriores = 0;
   const fechaMinTodo = minDate(
     ldTodo.filter((e) => e.fecha !== null).map((e) => e.fecha!)
@@ -231,7 +200,6 @@ export function calcularPeriodo(
   spEsp.resultadoPeriodosAnteriores = resultadoPeriodosAnteriores;
   spEsp.resultadoNetoPeriodo = er.resultadoNeto;
 
-  // Recalcular ROE / ROIC para el período con inflación del período
   const pn = spEsp.patrimonioNeto;
   if (tieneEr && pn > 0) {
     const gastosExtra = er.gastosDetalle["Gastos Extraordinarios"] ?? 0;
@@ -289,12 +257,6 @@ export function calcularPeriodo(
   };
 }
 
-// ─── calcularROEROICacumulado ──────────────────────────────────────────────────
-
-/**
- * Traduce _calcular_roe_roic_acumulado de Python.
- * Usado en el tab de evolución para calcular ROE/ROIC acumulados entre períodos.
- */
 export function calcularROEROICacumulado(
   resultados: Array<{
     er: IncomeStatement;
@@ -349,7 +311,6 @@ export function calcularROEROICacumulado(
   return out;
 }
 
-// ─── semáforo de diagnóstico ──────────────────────────────────────────────────
 
 export function semaforoDiagnostico(
   roe: number,
