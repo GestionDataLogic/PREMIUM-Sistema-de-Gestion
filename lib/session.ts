@@ -33,12 +33,12 @@ export async function getSession(): Promise<IronSession<SessionData>> {
   return getIronSession<SessionData>(cookieStore, getSessionOptions());
 }
 
-export async function requireAuth(): Promise<SessionData["user"]> {
+export async function requireAuth(): Promise<Pick<UserConfig, "nombre" | "celular" | "empresa" | "usuario" | "sheetId" | "gidLd" | "gidStock" | "gidIds">> {
   const session = await getSession();
   if (!session.isLoggedIn || !session.user) {
     throw new AuthError("No autorizado. Por favor, iniciá sesión.");
   }
-  return session.user;
+  return session.user; 
 }
 
 export class AuthError extends Error {
