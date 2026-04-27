@@ -24,7 +24,6 @@ export function useDashboard(periodoLabel: string): UseDashboardReturn {
     setError(null);
 
     try {
-      // Fetch periods first (only once on mount effectively, but kept here for simplicity)
       const [periodRes, dataRes] = await Promise.all([
         fetch("/api/periods"),
         fetch(`/api/dashboard?periodo=${encodeURIComponent(periodoLabel)}`),
@@ -57,7 +56,6 @@ export function useDashboard(periodoLabel: string): UseDashboardReturn {
       }
 
       const raw = await dataRes.json();
-      // Deep-deserialize Dates in result
       setResult(deserializeResult(raw));
       setState("success");
     } catch (err) {
@@ -74,19 +72,16 @@ export function useDashboard(periodoLabel: string): UseDashboardReturn {
   return { result, periods, state, error, refetch: fetchData };
 }
 
-// ─── Date deserializer ────────────────────────────────────────────────────────
 
 function deserializeResult(raw: unknown): CalculationResult {
-  // Cast – the backend guarantees the shape; we just need to fix Date fields
   const r = raw as CalculationResult;
 
-  // cp dates
+
   r.cp = r.cp.map((row) => ({
     ...row,
     fecha: row.fecha ? new Date(row.fecha as unknown as string) : null,
   }));
 
-  // deudas installment dates
   const fixInstallment = (c: unknown) => {
     const i = c as CalculationResult["deudas"]["cuotasCobrar"][0];
     return {
