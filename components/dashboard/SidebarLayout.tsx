@@ -150,7 +150,7 @@ export function SidebarLayout({
               </div>
             </div>
             <button
-              onClick={() => { window.location.href = "/"; }}
+              onClick={async () => { await fetch("/api/auth/logout", { method: "POST" }); window.location.href = "/login"; }}
               style={{ background: "none", border: "none", cursor: "pointer", padding: 4, color: "var(--text-tertiary)" }}
               title="Salir"
             >
