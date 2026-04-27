@@ -1,13 +1,3 @@
-/**
- * calculations.ts
- * ─────────────────────────────────────────────────────────────────────────────
- * Traducción de calcular_todo y _calcular_deudas de Python.
- *
- * Calcula el Estado de Resultados (ER), Estado de Situación Patrimonial (SP),
- * Flujo de Caja (FC), Cambio de Patrimonio (CP), Control de Deudas (DEUDAS)
- * y métricas financieras (ROE, ROIC).
- */
-
 import type {
   JournalEntry,
   StockEntry,
