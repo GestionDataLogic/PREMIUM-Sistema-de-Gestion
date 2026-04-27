@@ -1,20 +1,5 @@
-/**
- * google-sheets.ts
- * ─────────────────────────────────────────────────────────────────────────────
- * Capa de conexión a Google Sheets.
- *
- * Estrategia dual:
- *   1. Si USE_PUBLIC_CSV_EXPORT=true (o si no hay credenciales), usa la URL
- *      de exportación CSV pública (igual que el Python original).
- *   2. Si hay GOOGLE_SERVICE_ACCOUNT_JSON, usa la API oficial con googleapis.
- *
- * El caché en memoria evita re-fetches dentro de la misma función serverless
- * (TTL configurable vía SHEETS_CACHE_TTL, default 300 s).
- */
-
 import Papa from "papaparse";
 
-// ─── Tipos internos ───────────────────────────────────────────────────────────
 
 interface CacheEntry {
   data: string[][];
@@ -26,7 +11,6 @@ interface SheetRequest {
   gid: string;
 }
 
-// ─── Cache en memoria (por proceso Node.js) ───────────────────────────────────
 
 const sheetCache = new Map<string, CacheEntry>();
 
@@ -63,14 +47,12 @@ export function clearCache(sheetId?: string, gid?: string): void {
   }
 }
 
-// ─── CSV público ──────────────────────────────────────────────────────────────
 
 async function fetchViaCSV({ sheetId, gid }: SheetRequest): Promise<string[][]> {
   const url = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&gid=${gid}`;
 
   const res = await fetch(url, {
     headers: { Accept: "text/csv" },
-    // En Next.js 15 podemos controlar el caché de fetch directamente
     next: { revalidate: getCacheTTL() / 1_000 },
   });
 
@@ -82,7 +64,6 @@ async function fetchViaCSV({ sheetId, gid }: SheetRequest): Promise<string[][]> 
 
   const raw = await res.text();
 
-  // PapaParse para parsear correctamente CSV con comillas, comas en valores, etc.
   const parsed = Papa.parse<string[]>(raw, {
     skipEmptyLines: false,
     header: false,
@@ -91,7 +72,6 @@ async function fetchViaCSV({ sheetId, gid }: SheetRequest): Promise<string[][]> 
   return parsed.data as string[][];
 }
 
-// ─── API oficial con Service Account ─────────────────────────────────────────
 
 async function fetchViaAPI({ sheetId, gid }: SheetRequest): Promise<string[][]> {
   // Import dinámico para no penalizar el build si no se usa
@@ -111,7 +91,6 @@ async function fetchViaAPI({ sheetId, gid }: SheetRequest): Promise<string[][]> 
 
   const sheets = google.sheets({ version: "v4", auth });
 
-  // Primero obtenemos el nombre de la hoja a partir del GID
   const meta = await sheets.spreadsheets.get({ spreadsheetId: sheetId });
   const sheetsList = meta.data.sheets ?? [];
   const sheet = sheetsList.find(
@@ -134,21 +113,13 @@ async function fetchViaAPI({ sheetId, gid }: SheetRequest): Promise<string[][]> 
   return rows.map((row) => row.map((cell) => String(cell ?? "")));
 }
 
-// ─── Función principal ────────────────────────────────────────────────────────
-
-/**
- * Descarga una hoja de Google Sheets y retorna string[][].
- * Usa caché en memoria entre llamadas en la misma instancia serverless.
- */
 export async function downloadSheet(
   sheetId: string,
   gid: string
 ): Promise<string[][]> {
-  // 1. Intentar caché
   const cached = getFromCache(sheetId, gid);
   if (cached) return cached;
 
-  // 2. Decidir estrategia
   const useCSV =
     process.env.USE_PUBLIC_CSV_EXPORT === "true" ||
     !process.env.GOOGLE_SERVICE_ACCOUNT_JSON;
@@ -173,16 +144,10 @@ export async function downloadSheet(
   return data;
 }
 
-// ─── Loader de usuarios ───────────────────────────────────────────────────────
 
 import type { UserConfig } from "./types";
 
-/**
- * Carga la planilla maestra de usuarios desde MASTER_SHEET_ID / MASTER_GID.
- * La estructura esperada es:
- *   Fila 0-1: cabecera / título (ignoradas)
- *   Fila 2+:  nombre, celular, empresa, usuario, clave, sheetId, gidLd, gidStock, gidIds
- */
+
 export async function loadUsers(): Promise<Record<string, UserConfig>> {
   const sheetId = process.env.MASTER_SHEET_ID;
   const gid = process.env.MASTER_GID ?? "0";
@@ -195,7 +160,6 @@ export async function loadUsers(): Promise<Record<string, UserConfig>> {
 
   const users: Record<string, UserConfig> = {};
 
-  // Saltear las primeras 2 filas (cabeceras)
   for (const row of rows.slice(2)) {
     if (row.length < 9) continue;
 
@@ -211,7 +175,6 @@ export async function loadUsers(): Promise<Record<string, UserConfig>> {
       gidIds,
     ] = row.map((c) => c.trim().replace(/^["']|["']$/g, ""));
 
-    // Limpiar el prefijo de apóstrofe que usa Sheets para forzar texto
     const clave = claveRaw.replace(/^'/, "");
 
     if (!usuario || !clave) continue;
